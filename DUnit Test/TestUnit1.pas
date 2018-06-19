@@ -43,4 +43,70 @@ end;
 initialization
  // Register any test cases with the test runner
  RegisterTest(TestTForm1.Suite);
+ procedure TForm1.Compare(ignoreCase: boolean);
+var
+ i: integer;
+begin
+ //Очищаем список индексов разных строк.
+ differentStrings.Clear;
+ //Ищем разные строки.
+ for i := 0 to Min(RichEdit1.Lines.Count, RichEdit2.Lines.Count) - 1 do
+ if ignoreCase then
+ begin
+ //Сравнение строк с игнорированием регистра.
+ if CompareText(RichEdit1.Lines[i], RichEdit2.Lines[i], TLocaleOptions.loUserLocal
+e) <> 0 then
+ differentStrings.Add(i);
+ end
+ else
+ begin
+ //Сравнение строк с учётом регистра.
+ if CompareStr(RichEdit1.Lines[i], RichEdit2.Lines[i], TLocaleOptions.loUserLocale
+) <> 0 then
+ differentStrings.Add(i);
+ end;
+ //Если в каком-то списке больше строк, чем в другом,
+ //то такие строки тоже считаем разными.
+ for i := Min(RichEdit1.Lines.Count, RichEdit2.Lines.Count)
+ to Max(RichEdit1.Lines.Count, RichEdit2.Lines.Count) - 1 do
+ differentStrings.Add(i);
+end;
+procedure TestTForm1.TestCompare;
+var
+ ignoreCase: Boolean;
+begin
+ ignoreCase := true;
+ //Добавляем разный текст в текстовые поля.
+ FForm1.RichEdit1.Text := 'text1';
+ FForm1.RichEdit2.Text := 'text2';
+ //Сравниваем тексты с одинаковым количеством разных строк.
+ FForm1.Compare(ignoreCase);
+ //Проверяем результат.
+ CheckEquals(1, FForm1.differentStrings.Count,
+ 'Сравнение не работает. Разница в текстах не определена!');
+ //Добавляем в первое текстовое поле ещё одну строку.
+ FForm1.RichEdit1.Lines.Add('text3');
+ //Сравниваем тексты с разным количеством разных строк.
+ FForm1.Compare(ignoreCase);
+ //Проверяем результат.
+ CheckEquals(2, FForm1.differentStrings.Count,
+ 'Разница в текстах определена неправильно!');
+ //Добавляем тексты с разным регистром.
+ FForm1.RichEdit1.Lines.CommaText := 'Text1,text2';
+ FForm1.RichEdit2.Lines.CommaText := 'text1,text2';
+ //Сравниваем тексты с игнорированием регистра.
+ FForm1.Compare(ignoreCase);
+ //Проверяем количество различающихся строк.
+ CheckEquals(0, FForm1.differentStrings.Count,
+ 'Тексты одинаковые, а определены как разные.');
+ //Сравниваем тексты с учётом регистра.
+ ignoreCase := false;
+ FForm1.Compare(ignoreCase);
+ //Проверяем количество различающихся строк.
+ CheckEquals(1, FForm1.differentStrings.Count,
+ 'Тексты с разным регистром, а определены как одинаковые.');
+ //Проверяем индекс различающихся строк.
+ CheckEquals(0, FForm1.differentStrings[0],
+ 'Индекс различающихся строк определён неправильно.');
+end; 
 end.
